@@ -42,49 +42,26 @@ KEEP_RUNNING=0
 PORT=8555
 
 while [ $# -gt 0 ]; do
-  case "$1" in
-  --pause)
-    PAUSE="$2"
-    shift 2
-    ;;
-  --type-speed)
-    TYPE_SPEED="$2"
-    shift 2
-    ;;
-  --no-color)
-    USE_COLOR=0
-    shift
-    ;;
-  --keep-running)
-    KEEP_RUNNING=1
-    shift
-    ;;
-  --port)
-    PORT="$2"
-    shift 2
-    ;;
-  *)
-    echo "unknown option: $1"
-    exit 1
-    ;;
-  esac
+	case "$1" in
+	--pause) PAUSE="$2"; shift 2 ;;
+	--type-speed) TYPE_SPEED="$2"; shift 2 ;;
+	--no-color) USE_COLOR=0; shift ;;
+	--keep-running) KEEP_RUNNING=1; shift ;;
+	--port) PORT="$2"; shift 2 ;;
+	*) echo "unknown option: $1"; exit 1 ;;
+	esac
 done
 RPC_URL="http://127.0.0.1:${PORT}"
 
 if [ "$USE_COLOR" = "1" ]; then
-  C_BANNER='\033[1;36m' # bold cyan
-  C_SAY='\033[0;33m'    # yellow
-  C_CMD='\033[1;32m'    # bold green
-  C_TREE='\033[0;35m'   # magenta -- file trees and commit chains
-  C_STATUS='\033[1;34m' # bold blue -- status panels
-  C_RESET='\033[0m'
+	C_BANNER='\033[1;36m'  # bold cyan
+	C_SAY='\033[0;33m'     # yellow
+	C_CMD='\033[1;32m'     # bold green
+	C_TREE='\033[0;35m'    # magenta -- file trees and commit chains
+	C_STATUS='\033[1;34m'  # bold blue -- status panels
+	C_RESET='\033[0m'
 else
-  C_BANNER=''
-  C_SAY=''
-  C_CMD=''
-  C_TREE=''
-  C_STATUS=''
-  C_RESET=''
+	C_BANNER=''; C_SAY=''; C_CMD=''; C_TREE=''; C_STATUS=''; C_RESET=''
 fi
 
 # ---------------------------------------------------------------------
@@ -92,64 +69,64 @@ fi
 # ---------------------------------------------------------------------
 
 banner() {
-  local text="$1"
-  local width=$((${#text} + 4))
-  local border
-  border=$(printf '─%.0s' $(seq 1 "$width"))
-  echo ""
-  echo ""
-  printf "${C_BANNER}┌%s┐${C_RESET}\n" "$border"
-  printf "${C_BANNER}│  %s  │${C_RESET}\n" "$text"
-  printf "${C_BANNER}└%s┘${C_RESET}\n" "$border"
-  echo ""
-  sleep "$PAUSE"
+	local text="$1"
+	local width=$((${#text} + 4))
+	local border
+	border=$(printf '─%.0s' $(seq 1 "$width"))
+	echo ""
+	echo ""
+	printf "${C_BANNER}┌%s┐${C_RESET}\n" "$border"
+	printf "${C_BANNER}│  %s  │${C_RESET}\n" "$text"
+	printf "${C_BANNER}└%s┘${C_RESET}\n" "$border"
+	echo ""
+	sleep "$PAUSE"
 }
 
 say() {
-  echo ""
-  printf "${C_SAY}▸ %s${C_RESET}\n" "$1"
-  echo ""
-  sleep "$(awk -v p="$PAUSE" 'BEGIN{print p/2}')"
+	echo ""
+	printf "${C_SAY}▸ %s${C_RESET}\n" "$1"
+	echo ""
+	sleep "$(awk -v p="$PAUSE" 'BEGIN{print p/2}')"
 }
 
 # type_out prints a string as if it were being typed live, then a newline.
 type_out() {
-  local text="$1"
-  if [ "$(awk -v t="$TYPE_SPEED" 'BEGIN{print (t==0)?1:0}')" = "1" ]; then
-    printf '%s\n' "$text"
-    return
-  fi
-  local i char
-  for ((i = 0; i < ${#text}; i++)); do
-    char="${text:$i:1}"
-    printf '%s' "$char"
-    sleep "$TYPE_SPEED"
-  done
-  printf '\n'
+	local text="$1"
+	if [ "$(awk -v t="$TYPE_SPEED" 'BEGIN{print (t==0)?1:0}')" = "1" ]; then
+		printf '%s\n' "$text"
+		return
+	fi
+	local i char
+	for ((i = 0; i < ${#text}; i++)); do
+		char="${text:$i:1}"
+		printf '%s' "$char"
+		sleep "$TYPE_SPEED"
+	done
+	printf '\n'
 }
 
 # run "<full shell command as one string>" -- types it out, then executes
 # it for real. Uses eval deliberately: every call site below is a fixed
 # string written into this script, never external/user input.
 run() {
-  printf "${C_CMD}\$ ${C_RESET}"
-  type_out "$1"
-  eval "$1"
-  echo ""
+	printf "${C_CMD}\$ ${C_RESET}"
+	type_out "$1"
+	eval "$1"
+	echo ""
 }
 
 # run_expect_fail is identical but for commands the demo deliberately shows
 # failing (self-approval, private-repo-without-encryption) -- keeps that
 # visually distinct so it doesn't look like a mistake during recording.
 run_expect_fail() {
-  printf "${C_CMD}\$ ${C_RESET}"
-  type_out "$1"
-  if eval "$1"; then
-    echo "(unexpected: this command was supposed to fail)"
-  else
-    printf "${C_SAY}▸ (failed as expected -- that's the point of this step)${C_RESET}\n"
-  fi
-  echo ""
+	printf "${C_CMD}\$ ${C_RESET}"
+	type_out "$1"
+	if eval "$1"; then
+		echo "(unexpected: this command was supposed to fail)"
+	else
+		printf "${C_SAY}▸ (failed as expected -- that's the point of this step)${C_RESET}\n"
+	fi
+	echo ""
 }
 
 # ---------------------------------------------------------------------
@@ -161,90 +138,90 @@ run_expect_fail() {
 # tree_view <directory> [label] -- renders the tracked working directory
 # as an indented tree (no external `tree` binary required).
 tree_view() {
-  local root="$1"
-  local label="${2:-$(basename "$root")}"
-  local tmpfile
-  tmpfile=$(mktemp)
-  (cd "$root" && find . -mindepth 1 -not -path '*/.dvcs*' -not -name '.dvcs' 2>/dev/null | sed 's|^\./||' | sort) >"$tmpfile"
-  local total
-  total=$(wc -l <"$tmpfile" | tr -d ' ')
+	local root="$1"
+	local label="${2:-$(basename "$root")}"
+	local tmpfile
+	tmpfile=$(mktemp)
+	(cd "$root" && find . -mindepth 1 -not -path '*/.dvcs*' -not -name '.dvcs' 2>/dev/null | sed 's|^\./||' | sort) > "$tmpfile"
+	local total
+	total=$(wc -l < "$tmpfile" | tr -d ' ')
 
-  printf "${C_TREE}%s/${C_RESET}\n" "$label"
-  local i=0
-  while IFS= read -r path; do
-    i=$((i + 1))
-    local depth name is_last next next_depth indent d
-    depth=$(grep -o "/" <<<"$path" | wc -l | tr -d ' ')
-    name="${path##*/}"
-    is_last=1
-    if [ "$i" -lt "$total" ]; then
-      next=$(sed -n "$((i + 1))p" "$tmpfile")
-      next_depth=$(grep -o "/" <<<"$next" | wc -l | tr -d ' ')
-      [ "$next_depth" -ge "$depth" ] && is_last=0
-    fi
-    indent=""
-    d=0
-    while [ "$d" -lt "$depth" ]; do
-      indent="${indent}│   "
-      d=$((d + 1))
-    done
-    if [ "$is_last" -eq 1 ]; then
-      printf "${C_TREE}%s└── %s${C_RESET}\n" "$indent" "$name"
-    else
-      printf "${C_TREE}%s├── %s${C_RESET}\n" "$indent" "$name"
-    fi
-  done <"$tmpfile"
-  rm -f "$tmpfile"
-  echo ""
+	printf "${C_TREE}%s/${C_RESET}\n" "$label"
+	local i=0
+	while IFS= read -r path; do
+		i=$((i + 1))
+		local depth name is_last next next_depth indent d
+		depth=$(grep -o "/" <<<"$path" | wc -l | tr -d ' ')
+		name="${path##*/}"
+		is_last=1
+		if [ "$i" -lt "$total" ]; then
+			next=$(sed -n "$((i + 1))p" "$tmpfile")
+			next_depth=$(grep -o "/" <<<"$next" | wc -l | tr -d ' ')
+			[ "$next_depth" -ge "$depth" ] && is_last=0
+		fi
+		indent=""
+		d=0
+		while [ "$d" -lt "$depth" ]; do
+			indent="${indent}│   "
+			d=$((d + 1))
+		done
+		if [ "$is_last" -eq 1 ]; then
+			printf "${C_TREE}%s└── %s${C_RESET}\n" "$indent" "$name"
+		else
+			printf "${C_TREE}%s├── %s${C_RESET}\n" "$indent" "$name"
+		fi
+	done <"$tmpfile"
+	rm -f "$tmpfile"
+	echo ""
 }
 
 # commit_chain <branch> -- renders that branch's history (oldest to
 # newest) as a linear chain of nodes, parsed from `dvcs log`.
 commit_chain() {
-  local branch="$1"
-  local pairs
-  pairs=$("$DVCS" log "$branch" 2>/dev/null | awk '
+	local branch="$1"
+	local pairs
+	pairs=$("$DVCS" log "$branch" 2>/dev/null | awk '
 		/^commit / { hash=$2; getmsg=0; next }
 		/^$/ { getmsg=1; next }
 		getmsg==1 && NF>0 { msg=$0; sub(/^    /,"",msg); print hash "|" msg; getmsg=0 }
 	')
-  if [ -z "$pairs" ]; then
-    printf "${C_TREE}(%s: no commits yet)${C_RESET}\n\n" "$branch"
-    return
-  fi
-  local rendered=()
-  while IFS= read -r line; do
-    rendered=("$line" "${rendered[@]}")
-  done <<<"$pairs"
+	if [ -z "$pairs" ]; then
+		printf "${C_TREE}(%s: no commits yet)${C_RESET}\n\n" "$branch"
+		return
+	fi
+	local rendered=()
+	while IFS= read -r line; do
+		rendered=("$line" "${rendered[@]}")
+	done <<<"$pairs"
 
-  local out="" first=1 hash short msg
-  for line in "${rendered[@]}"; do
-    hash="${line%%|*}"
-    msg="${line#*|}"
-    short="${hash:2:8}"
-    if [ "$first" -eq 1 ]; then
-      out="●  ${short}  \"${msg}\""
-      first=0
-    else
-      out="${out}   ──▶   ●  ${short}  \"${msg}\""
-    fi
-  done
-  printf "${C_TREE}%s${C_RESET}\n" "$out"
-  printf "${C_TREE}   (%s)${C_RESET}\n\n" "$branch"
+	local out="" first=1 hash short msg
+	for line in "${rendered[@]}"; do
+		hash="${line%%|*}"
+		msg="${line#*|}"
+		short="${hash:2:8}"
+		if [ "$first" -eq 1 ]; then
+			out="●  ${short}  \"${msg}\""
+			first=0
+		else
+			out="${out}   ──▶   ●  ${short}  \"${msg}\""
+		fi
+	done
+	printf "${C_TREE}%s${C_RESET}\n" "$out"
+	printf "${C_TREE}   (%s)${C_RESET}\n\n" "$branch"
 }
 
 # status_line <who> -- a compact one-glance panel: user, branch, HEAD,
 # tracked file count. Deliberately borderless (no fixed-width box to keep
 # aligned against variable-length dynamic content).
 status_line() {
-  local who="$1"
-  local branch head files
-  branch=$("$DVCS" status 2>/dev/null | head -1 | sed 's/On branch //')
-  head=$("$DVCS" status 2>/dev/null | grep "^HEAD:" | awk '{print substr($2,3,8)}')
-  files=$("$DVCS" ls 2>/dev/null | grep -c .)
-  [ -z "$head" ] && head="(none yet)"
-  printf "${C_STATUS}┃ %-8s  branch: %-16s  HEAD: %-10s  files: %s${C_RESET}\n\n" \
-    "$who" "$branch" "$head" "$files"
+	local who="$1"
+	local branch head files
+	branch=$("$DVCS" status 2>/dev/null | head -1 | sed 's/On branch //')
+	head=$("$DVCS" status 2>/dev/null | grep "^HEAD:" | awk '{print substr($2,3,8)}')
+	files=$("$DVCS" ls 2>/dev/null | grep -c .)
+	[ -z "$head" ] && head="(none yet)"
+	printf "${C_STATUS}┃ %-8s  branch: %-16s  HEAD: %-10s  files: %s${C_RESET}\n\n" \
+		"$who" "$branch" "$head" "$files"
 }
 
 # ---------------------------------------------------------------------
@@ -253,18 +230,18 @@ status_line() {
 
 CHAIN_PID=""
 cleanup() {
-  if [ "$KEEP_RUNNING" = "1" ]; then
-    echo ""
-    echo "Leaving Hardhat node running on ${RPC_URL} -- --keep-running was set."
-    echo "Stop it manually later with: pkill -f 'hardhat node --port ${PORT}'"
-    return
-  fi
-  # Killing $CHAIN_PID alone isn't reliable: npx often spawns the actual
-  # long-running hardhat process as a CHILD of the npx process it
-  # returned, so $! only captures the wrapper's PID, which can exit on
-  # its own while the real node keeps running. Match by the exact
-  # command line instead, which is unambiguous.
-  pkill -f "hardhat node --port ${PORT}" 2>/dev/null
+	if [ "$KEEP_RUNNING" = "1" ]; then
+		echo ""
+		echo "Leaving Hardhat node running on ${RPC_URL} -- --keep-running was set."
+		echo "Stop it manually later with: pkill -f 'hardhat node --port ${PORT}'"
+		return
+	fi
+	# Killing $CHAIN_PID alone isn't reliable: npx often spawns the actual
+	# long-running hardhat process as a CHILD of the npx process it
+	# returned, so $! only captures the wrapper's PID, which can exit on
+	# its own while the real node keeps running. Match by the exact
+	# command line instead, which is unambiguous.
+	pkill -f "hardhat node --port ${PORT}" 2>/dev/null
 }
 trap cleanup EXIT
 
@@ -273,32 +250,23 @@ trap cleanup EXIT
 # ---------------------------------------------------------------------
 
 if [ ! -x "$DVCS" ]; then
-  echo "No CLI binary at ${DVCS} -- building it first..."
-  (cd "${PROJECT_ROOT}/cli" && v -cc tcc -o dvcs .) || {
-    echo "CLI build failed"
-    exit 1
-  }
+	echo "No CLI binary at ${DVCS} -- building it first..."
+	(cd "${PROJECT_ROOT}/cli" && v -cc tcc -o dvcs .) || { echo "CLI build failed"; exit 1; }
 fi
 if [ ! -f "${PROJECT_ROOT}/build/DVCS.bin" ]; then
-  echo "No compiled contract at build/DVCS.bin -- compiling it first..."
-  (cd "$PROJECT_ROOT" && ./scripts/compile-contract.sh) || {
-    echo "Contract compile failed"
-    exit 1
-  }
+	echo "No compiled contract at build/DVCS.bin -- compiling it first..."
+	(cd "$PROJECT_ROOT" && ./scripts/compile-contract.sh) || { echo "Contract compile failed"; exit 1; }
 fi
 if [ ! -d "${SCRIPT_DIR}/node_modules/hardhat" ]; then
-  echo "Installing hardhat + ethers (one-time)..."
-  (cd "$SCRIPT_DIR" && npm install --save-dev "hardhat@^2.22.0" ethers >/dev/null 2>&1) ||
-    {
-      echo "npm install failed"
-      exit 1
-    }
+	echo "Installing hardhat + ethers (one-time)..."
+	(cd "$SCRIPT_DIR" && npm install --save-dev "hardhat@^2.22.0" ethers > /dev/null 2>&1) \
+		|| { echo "npm install failed"; exit 1; }
 fi
 if curl -s -m 2 -X POST -H "Content-Type: application/json" \
-  --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$RPC_URL" >/dev/null 2>&1; then
-  echo "Something is already listening on ${RPC_URL}."
-  echo "Either stop it, or pass a different port: ./demo.sh --port 8556"
-  exit 1
+	--data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$RPC_URL" > /dev/null 2>&1; then
+	echo "Something is already listening on ${RPC_URL}."
+	echo "Either stop it, or pass a different port: ./demo.sh --port 8556"
+	exit 1
 fi
 
 rm -rf "$WORKSPACE"
@@ -313,25 +281,25 @@ mkdir -p "$ALICE_DIR" "$BOB_DIR" "$PRIVATE_DIR"
 banner "Starting a local Hardhat chain and deploying the contract"
 
 cd "$SCRIPT_DIR"
-npx hardhat node --port "$PORT" >"${WORKSPACE}/hardhat.log" 2>&1 &
+npx hardhat node --port "$PORT" > "${WORKSPACE}/hardhat.log" 2>&1 &
 CHAIN_PID=$!
 
 printf "Waiting for the chain to be ready"
 READY=0
 for _ in $(seq 1 30); do
-  if curl -s -m 2 -X POST -H "Content-Type: application/json" \
-    --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$RPC_URL" >/dev/null 2>&1; then
-    READY=1
-    break
-  fi
-  printf "."
-  sleep 1
+	if curl -s -m 2 -X POST -H "Content-Type: application/json" \
+		--data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$RPC_URL" > /dev/null 2>&1; then
+		READY=1
+		break
+	fi
+	printf "."
+	sleep 1
 done
 echo ""
 if [ "$READY" -ne 1 ]; then
-  echo "Chain never became ready. Log:"
-  cat "${WORKSPACE}/hardhat.log"
-  exit 1
+	echo "Chain never became ready. Log:"
+	cat "${WORKSPACE}/hardhat.log"
+	exit 1
 fi
 
 DEPLOY_OUT=$(node -e "
@@ -355,9 +323,9 @@ CONTRACT=$(echo "$DEPLOY_OUT" | grep '^CONTRACT=' | cut -d= -f2)
 ALICE=$(echo "$DEPLOY_OUT" | grep '^ALICE=' | cut -d= -f2)
 BOB=$(echo "$DEPLOY_OUT" | grep '^BOB=' | cut -d= -f2)
 if [ -z "$CONTRACT" ]; then
-  echo "Deploy failed:"
-  echo "$DEPLOY_OUT"
-  exit 1
+	echo "Deploy failed:"
+	echo "$DEPLOY_OUT"
+	exit 1
 fi
 echo "Contract deployed at ${CONTRACT}"
 echo "Alice = ${ALICE}"
@@ -528,8 +496,8 @@ run "$DVCS push"
 banner "That's the demo -- see TUTORIAL.md and README.md for everything else."
 
 if [ "$KEEP_RUNNING" = "1" ]; then
-  echo ""
-  echo "Chain is still running at ${RPC_URL}. Contract: ${CONTRACT}"
-  echo "Alice's workspace: ${ALICE_DIR}"
-  echo "Bob's workspace:   ${BOB_DIR}"
+	echo ""
+	echo "Chain is still running at ${RPC_URL}. Contract: ${CONTRACT}"
+	echo "Alice's workspace: ${ALICE_DIR}"
+	echo "Bob's workspace:   ${BOB_DIR}"
 fi

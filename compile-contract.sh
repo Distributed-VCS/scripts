@@ -22,16 +22,16 @@ mkdir -p build
 
 SOLC_CMD="npx -p solc solcjs"
 if command -v solcjs >/dev/null 2>&1; then
-  SOLC_CMD="solcjs"
+	SOLC_CMD="solcjs"
 elif command -v solc >/dev/null 2>&1; then
-  SOLC_CMD="solc"
+	SOLC_CMD="solc"
 fi
 
 TMP_INPUT="$(mktemp)"
 TMP_OUTPUT="$(mktemp)"
 trap 'rm -f "$TMP_INPUT" "$TMP_OUTPUT"' EXIT
 
-cat >"$TMP_INPUT" <<'EOF'
+cat > "$TMP_INPUT" <<'EOF'
 {
   "language": "Solidity",
   "sources": {"DVCS.sol": {"content": null}},
@@ -52,7 +52,7 @@ json.dump(d, open('${TMP_INPUT}', 'w'))
 "
 
 echo "Compiling with: ${SOLC_CMD} --standard-json"
-${SOLC_CMD} --standard-json <"$TMP_INPUT" >"$TMP_OUTPUT" 2>/dev/null || true
+${SOLC_CMD} --standard-json < "$TMP_INPUT" > "$TMP_OUTPUT" 2>/dev/null || true
 
 # solcjs sometimes prefixes stdout with an unrelated informational line
 # (e.g. about SMT solvers) before the actual JSON -- strip anything before
